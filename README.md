@@ -6,6 +6,14 @@
 
 ## Preview
 
+<p align="center">
+  <img src="./Display.jpg" alt="RankForge app interface" width="900" />
+</p>
+
+<p align="center">
+  <img src="./Output.png" alt="RankForge exported tier list example" width="900" />
+</p>
+
 - 多图上传与预览
 - 拖拽图片到不同层级
 - 自定义层级名称
@@ -158,4 +166,3 @@ npm run preview
 ## License
 
 MIT
-
