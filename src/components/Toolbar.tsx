@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface ToolbarProps {
   onAddTier: () => void;
+  onImport: (file: File) => void;
+  onReset: () => void;
   onExport: () => void;
   theme: 'dark' | 'light';
   onThemeChange: (theme: 'dark' | 'light', origin: { x: number; y: number }) => void;
@@ -14,6 +16,8 @@ const translations = {
   zh: {
     title: '夯拉榜',
     addTier: '添加层级',
+    import: '导入备份',
+    reset: '清空重来',
     export: '导出',
     theme: '主题',
     lang: '语言',
@@ -21,16 +25,19 @@ const translations = {
   en: {
     title: '夯拉榜',
     addTier: 'Add Tier',
+    import: 'Import',
+    reset: 'Reset',
     export: 'Export',
     theme: 'Theme',
     lang: 'Lang',
   },
 };
 
-export default function Toolbar({ onAddTier, onExport, theme, onThemeChange, lang, onLangChange }: ToolbarProps) {
+export default function Toolbar({ onAddTier, onImport, onReset, onExport, theme, onThemeChange, lang, onLangChange }: ToolbarProps) {
   const isDark = theme === 'dark';
   const t = translations[lang];
   const themeBtnRef = useRef<HTMLButtonElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const handleThemeToggle = () => {
     if (themeBtnRef.current) {
@@ -41,6 +48,14 @@ export default function Toolbar({ onAddTier, onExport, theme, onThemeChange, lan
       };
       onThemeChange(isDark ? 'light' : 'dark', origin);
     }
+  };
+
+  const handleImportChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onImport(file);
+    }
+    e.target.value = '';
   };
 
   return (
@@ -57,7 +72,7 @@ export default function Toolbar({ onAddTier, onExport, theme, onThemeChange, lan
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {/* Theme Toggle */}
           <motion.button
             ref={themeBtnRef}
@@ -110,6 +125,38 @@ export default function Toolbar({ onAddTier, onExport, theme, onThemeChange, lan
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             {t.addTier}
+          </motion.button>
+
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportChange}
+            className="hidden"
+          />
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => importInputRef.current?.click()}
+            className={`px-4 py-2 rounded-xl border text-sm font-medium flex items-center gap-1.5 transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:text-white' : 'bg-black/5 border-black/10 text-slate-700 hover:bg-black/10'}`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M16 8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {t.import}
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onReset}
+            className={`px-4 py-2 rounded-xl border text-sm font-medium flex items-center gap-1.5 transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white/70 hover:bg-red-500/15 hover:text-red-200 hover:border-red-300/30' : 'bg-black/5 border-black/10 text-slate-700 hover:bg-red-500/10 hover:text-red-700 hover:border-red-300/50'}`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12" />
+            </svg>
+            {t.reset}
           </motion.button>
 
           <motion.button

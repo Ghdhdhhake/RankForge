@@ -2,11 +2,17 @@
   "name": "hotrank",
   "private": true,
   "version": "1.0.0",
+  "description": "A beginner-friendly image tier list desktop app built with React, Vite, and Electron.",
+  "author": "Codex",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
+    "start": "vite",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "desktop": "electron .",
+    "dist:win": "npm run build && electron-builder --win nsis"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -19,9 +25,44 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.5.3",
     "vite": "^5.4.2"
+  },
+  "build": {
+    "appId": "com.rankforge.desktop",
+    "productName": "HotRank",
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "HotRank-Setup-${version}.${ext}",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "executableName": "HotRank",
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "HotRank"
+    }
   }
 }

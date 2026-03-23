@@ -25,6 +25,7 @@ const defaultTiers: Tier[] = [
 ];
 
 const STORAGE_KEY = 'tier_ranking_data_v5';
+const QUICK_START_KEY = 'tier_ranking_quick_start_hidden_v1';
 
 function isLocalStorageAvailable(): boolean {
   try {
@@ -62,6 +63,57 @@ function loadData(): { tiers: Tier[]; items: TierItem[] } {
   return { tiers: defaultTiers, items: [] };
 }
 
+function normalizeImportedData(raw: unknown): { tiers: Tier[]; items: TierItem[] } | null {
+  if (typeof raw !== 'object' || raw === null) {
+    return null;
+  }
+
+  const candidate = raw as { tiers?: unknown; items?: unknown };
+  if (!Array.isArray(candidate.tiers)) {
+    return null;
+  }
+
+  const tiers = candidate.tiers
+    .filter((tier): tier is Tier =>
+      typeof tier === 'object' &&
+      tier !== null &&
+      'id' in tier &&
+      'name' in tier &&
+      'color' in tier &&
+      'order' in tier
+    )
+    .map((tier) => ({
+      id: String(tier.id),
+      name: String(tier.name),
+      color: String(tier.color),
+      order: Number(tier.order),
+    }));
+
+  if (tiers.length === 0) {
+    return null;
+  }
+
+  const itemsSource = Array.isArray(candidate.items) ? candidate.items : [];
+  const items = itemsSource
+    .filter((item): item is TierItem =>
+      typeof item === 'object' &&
+      item !== null &&
+      'id' in item &&
+      'name' in item &&
+      'tierId' in item
+    )
+    .map((item) => ({
+      id: String(item.id),
+      name: String(item.name),
+      tierId: String(item.tierId),
+      imageUrl: typeof item.imageUrl === 'string' ? item.imageUrl : undefined,
+      color: typeof item.color === 'string' ? item.color : undefined,
+      note: typeof item.note === 'string' ? item.note : undefined,
+    }));
+
+  return { tiers, items };
+}
+
 export default function App() {
   const [tiers, setTiers] = useState<Tier[]>(() => loadData().tiers);
   const [items, setItems] = useState<TierItem[]>(() => loadData().items);
@@ -78,6 +130,10 @@ export default function App() {
   const [transitionOrigin, setTransitionOrigin] = useState({ x: 0, y: 0 });
   const [saveError, setSaveError] = useState(false);
   const [duplicateCount, setDuplicateCount] = useState(0);
+  const [showQuickStart, setShowQuickStart] = useState(() => {
+    if (!isLocalStorageAvailable()) return true;
+    return localStorage.getItem(QUICK_START_KEY) !== 'hidden';
+  });
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -101,6 +157,11 @@ export default function App() {
     const timer = setTimeout(saveData, 500);
     return () => clearTimeout(timer);
   }, [tiers, items, saveError]);
+
+  useEffect(() => {
+    if (!showQuickStart || !isLocalStorageAvailable()) return;
+    localStorage.removeItem(QUICK_START_KEY);
+  }, [showQuickStart]);
 
   const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -269,6 +330,58 @@ export default function App() {
     setTimeout(() => setIsTransitioning(false), 600);
   }, []);
 
+  const handleImport = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const normalized = normalizeImportedData(parsed);
+
+      if (!normalized) {
+        alert(lang === 'zh' ? '这个 JSON 不是可恢复的夯拉榜备份文件。' : 'This JSON is not a valid backup file.');
+        return;
+      }
+
+      setTiers(normalized.tiers.sort((a, b) => a.order - b.order));
+      setItems(normalized.items);
+      setNewItemImages([]);
+      setShowExport(false);
+      setSaveError(false);
+      alert(lang === 'zh' ? '导入成功，当前排行已恢复。' : 'Import successful.');
+    } catch (error) {
+      console.error('导入失败:', error);
+      alert(lang === 'zh' ? '导入失败，请确认文件是正确的 JSON。' : 'Import failed. Please check the JSON file.');
+    }
+  }, [lang]);
+
+  const handleResetBoard = useCallback(() => {
+    const confirmed = window.confirm(
+      lang === 'zh'
+        ? '确认清空当前排行吗？已上传图片、层级调整和分类结果都会被清空。'
+        : 'Clear the current board? Uploaded images, tier edits, and rankings will be removed.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setTiers(defaultTiers);
+    setItems([]);
+    setNewItemImages([]);
+    setShowExport(false);
+    setSaveError(false);
+    setEditingTierId(null);
+    setEditingTierName('');
+  }, [lang]);
+
+  const handleDismissQuickStart = useCallback(() => {
+    setShowQuickStart(false);
+    if (isLocalStorageAvailable()) {
+      localStorage.setItem(QUICK_START_KEY, 'hidden');
+    }
+  }, []);
+
+  const isEmptyBoard = items.length === 0 && newItemImages.length === 0;
+
   return (
     <div className={`min-h-screen font-ios flex flex-col relative overflow-hidden ${isDark ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' : 'bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300'}`}>
       {/* Theme transition overlay */}
@@ -285,12 +398,56 @@ export default function App() {
       </AnimatePresence>
       <Toolbar
         onAddTier={handleAddTier}
+        onImport={handleImport}
+        onReset={handleResetBoard}
         onExport={() => setShowExport(true)}
         theme={theme}
         onThemeChange={handleThemeChange}
         lang={lang}
         onLangChange={setLang}
       />
+
+      {showQuickStart && isEmptyBoard && (
+        <div className="px-4 pt-4">
+          <div className={`mx-auto max-w-6xl rounded-3xl border px-5 py-4 shadow-xl transition-all duration-500 ${isDark ? 'border-white/10 bg-white/5 shadow-black/20' : 'border-black/10 bg-white/80 shadow-slate-400/20'}`}>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className={`text-sm font-semibold ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>
+                  {lang === 'zh' ? '第一次用？三步就够了' : 'First time here? It only takes 3 steps'}
+                </p>
+                <h2 className={`mt-1 text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  {lang === 'zh' ? '上传图片、拖到等级、最后导出保存' : 'Upload images, drag to a tier, then export'}
+                </h2>
+                <p className={`mt-1 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {lang === 'zh' ? '右侧先选图片，添加后直接拖动到左边等级里。做完点右上角“导出”即可。' : 'Choose images on the right, add them, then drag them into tiers on the left. Export when done.'}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {[
+                  lang === 'zh' ? '1. 点击右侧上传图片' : '1. Upload on the right',
+                  lang === 'zh' ? '2. 拖到对应等级' : '2. Drag into a tier',
+                  lang === 'zh' ? '3. 点导出保存结果' : '3. Export your result',
+                ].map((step) => (
+                  <div
+                    key={step}
+                    className={`rounded-2xl px-4 py-3 text-sm ${isDark ? 'bg-slate-900/70 text-slate-100' : 'bg-slate-100 text-slate-700'}`}
+                  >
+                    {step}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={handleDismissQuickStart}
+                className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${isDark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-black/5 text-slate-700 hover:bg-black/10'}`}
+              >
+                {lang === 'zh' ? '我知道了' : 'Got it'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">

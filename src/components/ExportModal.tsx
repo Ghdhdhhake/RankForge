@@ -58,10 +58,8 @@ export default function ExportModal({ tiers, items, onClose, theme = 'dark' }: E
       version: '1.0',
       exportTime: new Date().toISOString(),
       title: '我的阶梯排行',
-      tiers: tiers.map(tier => ({
-        ...tier,
-        items: getItemsByTier(tier.id).map(item => item.name),
-      })),
+      tiers,
+      items,
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -71,7 +69,7 @@ export default function ExportModal({ tiers, items, onClose, theme = 'dark' }: E
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
-  }, [tiers, getItemsByTier]);
+  }, [tiers, items]);
 
   const handleShare = useCallback(async () => {
     try {
