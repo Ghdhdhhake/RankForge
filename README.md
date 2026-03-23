@@ -16,11 +16,11 @@
 ## Preview
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Ghdhdhhake/RankForge/main/.github/assets/display.jpg" alt="HotRank interface preview" width="900" />
+  <img src="./.github/assets/display.jpg" alt="HotRank interface preview" width="900" />
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Ghdhdhhake/RankForge/main/.github/assets/output.png" alt="HotRank export preview" width="900" />
+  <img src="./.github/assets/output.png" alt="HotRank export preview" width="900" />
 </p>
 
 ## Features
@@ -111,7 +111,7 @@ Windows 打包脚本位于 `scripts/windows/`。
 如果这个项目对你有帮助，欢迎打赏支持：
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Ghdhdhhake/RankForge/main/.github/assets/payee.jpg" alt="Support HotRank" width="280" />
+  <img src="./.github/assets/payee.jpg" alt="Support HotRank" width="280" />
 </p>
 
 ## License
