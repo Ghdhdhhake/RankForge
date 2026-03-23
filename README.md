@@ -43,6 +43,8 @@
 3. 双击运行安装程序
 4. 安装完成后，从桌面快捷方式打开 `HotRank`
 
+如果当前 Releases 还是空的，可以先在本地执行 `scripts/windows/build-installer.bat` 生成安装包。
+
 适用场景：
 
 - 人物 / 角色排行
